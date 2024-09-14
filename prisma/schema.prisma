@@ -1,0 +1,111 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(LEADGEN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  leads     Lead[]
+  realtor   Realtor?
+}
+
+model Lead {
+  id                String   @id @default(cuid())
+  submissionDate    DateTime @default(now())
+  customerFirstName String
+  customerLastName  String
+  phoneNumber       String
+  emailAddress      String
+  propertyAddress   String
+  city              String
+  state             String
+  zipcode           String
+  homeOwner         Boolean
+  propertyValue     Float
+  contractWithRealtor Boolean
+  status            LeadStatus @default(PENDING)
+  recording         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  submittedBy       User     @relation(fields: [submittedById], references: [id])
+  submittedById     String
+  assignedTo        Realtor? @relation(fields: [assignedToId], references: [id])
+  assignedToId      String?
+  leadAssignments   LeadAssignment[]
+}
+
+model Realtor {
+  id            String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  phoneNumber   String
+  email         String   @unique
+  brokerage     String
+  state         String
+  centralZipCode String
+  radius        Int
+  signUpCategory String
+  totalTeamMembers Int?
+  agentCode     String   @unique
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String   @unique
+  assignedLeads Lead[]
+  leadAssignments LeadAssignment[]
+}
+
+model LeadAssignment {
+  id        String   @id @default(cuid())
+  dateSent  DateTime @default(now())
+  
+  // Relationships
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  leadId    String
+  realtor   Realtor  @relation(fields: [realtorId], references: [id])
+  realtorId String
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  SALES
+  SUPPORT
+  REALTOR
+  LEADGEN
+  QA
+}
+
+enum LeadStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  NO_COVERAGE
+  CALLED
+  NOT_INTERESTED
+  MEETING_SCHEDULED
+  MET_WITH_SELLER
+  LISTING_AGREEMENT_SENT
+  NOT_LISTING
+  LISTED
+  LISTED_BY_HOMEOWNER
+  PROPERTY_SOLD
+}
